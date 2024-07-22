@@ -1,0 +1,9 @@
+[package]
+name = "code_generator"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "A code generator (Currently only targets C)"
+keywords = ["code", "generation", "code_generator", "generator"]
+
+[dependencies]
