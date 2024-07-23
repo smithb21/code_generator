@@ -1,6 +1,12 @@
-mod c_generator;
+mod building_block_generators;
+mod setup;
+mod flow_control_generators;
+mod data_type_generators;
 
-pub use c_generator::*;
+pub use building_block_generators::*;
+pub use setup::*;
+pub use flow_control_generators::*;
+pub use data_type_generators::*;
 
 #[cfg(test)]
 mod tests {
