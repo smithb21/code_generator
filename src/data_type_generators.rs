@@ -23,6 +23,12 @@ impl FunctionSignature {
     }
 }
 
+impl From<FunctionSignature> for FunctionDeclaration {
+    fn from(value: FunctionSignature) -> Self {
+        Self { signature: value }
+    }
+}
+
 impl CodeGenerate for FunctionSignature {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());

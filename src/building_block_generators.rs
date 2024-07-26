@@ -60,6 +60,7 @@ impl CodeGenerate for Indentation {
 #[derive(Clone, Copy)]
 pub enum NameType {
     Default,
+    ConstDefine,
     Type,
     Member,
     Function,
@@ -182,9 +183,10 @@ impl Name {
         }
     }
 
-    fn get_case_type(&self, info: CodeGenerationInfo) -> CaseType {
+    fn get_case_type(&self, info: CaseTypes) -> CaseType {
         match self.name_type {
             NameType::Default => info.default_name_case,
+            NameType::ConstDefine => info.const_define_case,
             NameType::Function => info.function_name_case,
             NameType::Member => info.member_name_case,
             NameType::Type => info.type_name_case,
@@ -197,7 +199,7 @@ impl Name {
 
 impl CodeGenerate for Name {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
-        let case_type = self.get_case_type(info);
+        let case_type = self.get_case_type(info.case_types);
         write!(f, "{}", self.casify(case_type))
     }
 }

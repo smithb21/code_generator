@@ -57,7 +57,7 @@
 //! "#include \"test.h\"
 //!
 //!
-//! MyReturnTypeOne myFunctionNameOne(ParamTypeOne param_name_one, ParamTypeTwo param_name_two, ParamTypeThree param_name_three) {
+//! MyReturnTypeOne my_function_name_one(ParamTypeOne param_name_one, ParamTypeTwo param_name_two, ParamTypeThree param_name_three) {
 //!     if (param_name_three) {
 //!         for (ParamTypeTwo i = 0; i < param_name_two; i++) {
 //!             printf(\"ParamOne: {}\\n\", param_name_one);
@@ -72,7 +72,7 @@
 //! "#include \"test.h\"
 //!
 //!
-//! MyReturnTypeOne myFunctionNameOne(ParamTypeOne param_name_one, ParamTypeTwo param_name_two, ParamTypeThree param_name_three)
+//! MyReturnTypeOne my_function_name_one(ParamTypeOne param_name_one, ParamTypeTwo param_name_two, ParamTypeThree param_name_three)
 //! {
 //!     if (param_name_three)
 //!     {
@@ -108,13 +108,12 @@ pub use data_type_generators::*;
 mod tests {
     use super::*;
 
-    static DEFAULT_GEN_INFO: CodeGenerationInfo = CodeGenerationInfo::from_style(CodeStyle::KnR);
-
     #[test]
     fn name_camel_case() {
+        let default_gen_info: CodeGenerationInfo = CodeGenerationInfo::from_style(CodeStyle::KnR);
         let case = NameType::FixedCase(CaseType::CamelCase);
         let name = Name::new_with_type("TEST_NAME", case);
-        let result = format!("{}", name.display(DEFAULT_GEN_INFO));
+        let result = format!("{}", name.display(default_gen_info));
         assert_eq!(result, "testName");
     }
 }

@@ -65,6 +65,29 @@ pub enum GeneratorContext {
 }
 
 #[derive(Copy, Clone)]
+pub struct CaseTypes {
+    pub const_define_case: CaseType,
+    pub function_name_case: CaseType,
+    pub member_name_case: CaseType,
+    pub type_name_case: CaseType,
+    pub file_name_case: CaseType,
+    pub default_name_case: CaseType,
+}
+
+impl CaseTypes {
+    pub fn new() -> CaseTypes {
+        CaseTypes {
+            const_define_case: CaseType::ScreamingSnakeCase,
+            function_name_case: CaseType::SnakeCase,
+            member_name_case: CaseType::SnakeCase,
+            type_name_case: CaseType::PascalCase,
+            file_name_case: CaseType::PascalCase,
+            default_name_case: CaseType::SnakeCase
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
 pub struct CodeGenerationInfo {
     pub indent_level: usize,
     pub indent_type:  IndentationType,
@@ -72,11 +95,7 @@ pub struct CodeGenerationInfo {
     pub indent_style: IndentationStyle,
     pub new_line_type: NewLineType,
     pub context: GeneratorContext,
-    pub function_name_case: CaseType,
-    pub member_name_case: CaseType,
-    pub type_name_case: CaseType,
-    pub file_name_case: CaseType,
-    pub default_name_case: CaseType,
+    pub case_types: CaseTypes,
 }
 
 pub struct DisplayHandler<'a> {
@@ -105,15 +124,13 @@ impl CodeGenerationInfo {
             indent_style: IndentationStyle::Allman,
             new_line_type: NewLineType::CrNl,
             context: GeneratorContext::File,
-            function_name_case: CaseType::CamelCase,
-            member_name_case: CaseType::SnakeCase,
-            type_name_case: CaseType::PascalCase,
-            file_name_case: CaseType::PascalCase,
-            default_name_case: CaseType::FlatCase,
+            case_types: CaseTypes::new(),
         }
     }
 
-    pub const fn from_style(code_style: CodeStyle) -> CodeGenerationInfo {
+    // TODO: chained setters
+
+    pub fn from_style(code_style: CodeStyle) -> CodeGenerationInfo {
         match code_style {
             CodeStyle::Allman => CodeGenerationInfo {
                 indent_level: 0,
@@ -122,11 +139,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Allman,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::GNU => CodeGenerationInfo {
                 indent_level: 0,
@@ -135,11 +148,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::GNU,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Horstmann => CodeGenerationInfo {
                 indent_level: 0,
@@ -148,11 +157,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Horstmann,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::KnR => CodeGenerationInfo {
                 indent_level: 0,
@@ -161,11 +166,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::KnR,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Lisp => CodeGenerationInfo {
                 indent_level: 0,
@@ -174,11 +175,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Lisp,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Minimal => CodeGenerationInfo {
                 indent_level: 0,
@@ -187,11 +184,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::None,
                 new_line_type: NewLineType::None,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Pico => CodeGenerationInfo {
                 indent_level: 0,
@@ -200,11 +193,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Pico,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Ratliff => CodeGenerationInfo {
                 indent_level: 0,
@@ -213,11 +202,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Ratliff,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Whitesmiths => CodeGenerationInfo {
                 indent_level: 0,
@@ -226,11 +211,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::Whitesmiths,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
             CodeStyle::Default => CodeGenerationInfo {
                 indent_level: 0,
@@ -239,11 +220,7 @@ impl CodeGenerationInfo {
                 indent_style: IndentationStyle::KnR,
                 new_line_type: NewLineType::CrNl,
                 context: GeneratorContext::File,
-                function_name_case: CaseType::CamelCase,
-                member_name_case: CaseType::SnakeCase,
-                type_name_case: CaseType::PascalCase,
-                file_name_case: CaseType::PascalCase,
-                default_name_case: CaseType::FlatCase,
+                case_types: CaseTypes::new(),
             },
         }
     }
