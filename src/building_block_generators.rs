@@ -11,6 +11,7 @@ use crate::setup::*;
 /// the parent generator. You will only need to use this when you create a
 /// multiline generator which does not use the existing code structure
 /// generators.
+#[derive(Clone, Copy)]
 pub struct Indentation {
 }
 
@@ -56,6 +57,7 @@ impl CodeGenerate for Indentation {
 /// 
 /// The Bypass variant is used to provide a name without having the generator
 /// use any sort of formatting on it.
+#[derive(Clone, Copy)]
 pub enum NameType {
     Default,
     Type,
@@ -66,6 +68,7 @@ pub enum NameType {
     Bypass,
 }
 
+#[derive(Clone)]
 pub struct Name {
     parts: Vec<String>,
     name_type: NameType
@@ -200,6 +203,7 @@ impl CodeGenerate for Name {
 }
 
 /// The NewLine struct allows the generation info to decide the new line format
+#[derive(Clone, Copy)]
 pub struct NewLine {
 }
 
