@@ -75,6 +75,7 @@ pub struct CodeGenerationInfo {
     pub function_name_case: CaseType,
     pub member_name_case: CaseType,
     pub type_name_case: CaseType,
+    pub file_name_case: CaseType,
     pub default_name_case: CaseType,
 }
 
@@ -107,6 +108,7 @@ impl CodeGenerationInfo {
             function_name_case: CaseType::CamelCase,
             member_name_case: CaseType::SnakeCase,
             type_name_case: CaseType::PascalCase,
+            file_name_case: CaseType::PascalCase,
             default_name_case: CaseType::FlatCase,
         }
     }
@@ -123,6 +125,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::GNU => CodeGenerationInfo {
@@ -135,6 +138,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Horstmann => CodeGenerationInfo {
@@ -147,6 +151,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::KnR => CodeGenerationInfo {
@@ -159,6 +164,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Lisp => CodeGenerationInfo {
@@ -171,6 +177,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Minimal => CodeGenerationInfo {
@@ -183,6 +190,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Pico => CodeGenerationInfo {
@@ -195,6 +203,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Ratliff => CodeGenerationInfo {
@@ -207,6 +216,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Whitesmiths => CodeGenerationInfo {
@@ -219,6 +229,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
             CodeStyle::Default => CodeGenerationInfo {
@@ -231,6 +242,7 @@ impl CodeGenerationInfo {
                 function_name_case: CaseType::CamelCase,
                 member_name_case: CaseType::SnakeCase,
                 type_name_case: CaseType::PascalCase,
+                file_name_case: CaseType::PascalCase,
                 default_name_case: CaseType::FlatCase,
             },
         }

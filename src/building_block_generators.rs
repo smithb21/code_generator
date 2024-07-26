@@ -61,6 +61,7 @@ pub enum NameType {
     Type,
     Member,
     Function,
+    File,
     FixedCase(CaseType),
     Bypass,
 }
@@ -126,7 +127,8 @@ impl Name {
 
     pub fn with_type(mut self, name_type: NameType) -> Name {
         match self.name_type {
-            // Fixed case bypasses the name type specialization
+            // Fixed/Bypass case bypasses the name type specialization
+            NameType::Bypass => (),
             NameType::FixedCase(_) => (),
             _ => self.name_type = name_type,
         }
@@ -183,6 +185,7 @@ impl Name {
             NameType::Function => info.function_name_case,
             NameType::Member => info.member_name_case,
             NameType::Type => info.type_name_case,
+            NameType::File => info.file_name_case,
             NameType::FixedCase(case) => case,
             NameType::Bypass => info.default_name_case,
         }

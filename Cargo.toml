@@ -6,5 +6,6 @@ license = "MIT"
 description = "A code generator (Currently only targets C)"
 keywords = ["code", "generation", "code_generator", "generator"]
 repository = "https://github.com/smithb21/code_generator"
+documentation = "https://docs.rs/code_generator/latest/code_generator/"
 
 [dependencies]
