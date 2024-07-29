@@ -216,12 +216,48 @@ impl TypeDef {
 
 impl CodeGenerate for TypeDef {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
-        info.context = GeneratorContext::Struct;
         let mut result = String::from("typedef ").generate(f, info);
         result = result.and(self.defined_type.generate(f, info));
         result = result.and(String::from(" ").generate(f, info));
         result = result.and(self.name.generate(f, info));
         result = result.and(String::from(";").generate(f, info));
+
+        result
+    }
+}
+
+
+pub struct ConstDefine<VT> {
+    name: Name,
+    value: VT,
+}
+
+impl<VT> ConstDefine<VT> {
+    /// Creates a ConstDefine generator
+    /// 
+    /// ```
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::JoinedCode;
+    /// # use code_generator::Name;
+    /// # use code_generator::ConstDefine;
+    /// #
+    /// let define = ConstDefine::new(Name::new("name"), String::from("2"));
+    /// let mut info = CodeGenerationInfo::new();
+    /// assert_eq!("#define NAME 2", format!("{}", define.display(info)));
+    /// ```
+    pub fn new(name: Name, value: VT) -> ConstDefine<VT> {
+        ConstDefine { name: name.with_type(NameType::ConstDefine), value }
+    }
+}
+
+impl<VT> CodeGenerate for ConstDefine<VT>
+where VT: CodeGenerate + 'static {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        let mut result = String::from("#define ").generate(f, info);
+        result = result.and(self.name.generate(f, info));
+        result = result.and(String::from(" ").generate(f, info));
+        result = result.and(self.value.generate(f, info));
 
         result
     }
