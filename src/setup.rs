@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::Indentation;
+
 #[derive(Clone, Copy, Debug)]
 
 pub enum IndentationStyle {
@@ -71,7 +73,7 @@ pub struct CaseTypes {
     pub member_name_case: CaseType,
     pub type_name_case: CaseType,
     pub file_name_case: CaseType,
-    pub default_name_case: CaseType,
+    pub default_case: CaseType,
 }
 
 impl CaseTypes {
@@ -82,8 +84,38 @@ impl CaseTypes {
             member_name_case: CaseType::SnakeCase,
             type_name_case: CaseType::PascalCase,
             file_name_case: CaseType::PascalCase,
-            default_name_case: CaseType::SnakeCase
+            default_case: CaseType::SnakeCase
         }
+    }
+
+    pub fn with_const_define(mut self, case_type: CaseType) -> Self {
+        self.const_define_case = case_type;
+        self
+    }
+
+    pub fn with_function_name(mut self, case_type: CaseType) -> Self {
+        self.function_name_case = case_type;
+        self
+    }
+
+    pub fn with_member_name(mut self, case_type: CaseType) -> Self {
+        self.member_name_case = case_type;
+        self
+    }
+
+    pub fn with_type_name(mut self, case_type: CaseType) -> Self {
+        self.type_name_case = case_type;
+        self
+    }
+
+    pub fn with_file_name(mut self, case_type: CaseType) -> Self {
+        self.file_name_case = case_type;
+        self
+    }
+
+    pub fn with_default(mut self, case_type: CaseType) -> Self {
+        self.default_case = case_type;
+        self
     }
 }
 
@@ -128,7 +160,30 @@ impl CodeGenerationInfo {
         }
     }
 
-    // TODO: chained setters
+    pub fn with_ident_style(mut self, style: IndentationStyle) -> Self {
+        self.indent_style = style;
+        self
+    }
+
+    pub fn with_ident_amount(mut self, amount: usize) -> Self {
+        self.indent_amount = amount;
+        self
+    }
+
+    pub fn with_indent_type(mut self, indent_type: IndentationType) -> Self {
+        self.indent_type = indent_type;
+        self
+    }
+
+    pub fn with_new_line_type(mut self, new_line_type: NewLineType) -> Self {
+        self.new_line_type = new_line_type;
+        self
+    }
+
+    pub fn with_case_types(mut self, case_types: CaseTypes) -> Self {
+        self.case_types = case_types;
+        self
+    }
 
     pub fn from_style(code_style: CodeStyle) -> CodeGenerationInfo {
         match code_style {

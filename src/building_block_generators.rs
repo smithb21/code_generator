@@ -140,6 +140,78 @@ impl Name {
         self
     }
 
+    /// Creates a Name generator
+    /// 
+    /// This struct makes it easy to change the name format based on the
+    /// context of the generator.
+    /// 
+    /// ```
+    /// # use code_generator::CaseType;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::Name;
+    /// # use code_generator::NameType;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::CaseTypes;
+    /// #
+    /// let name = Name::new("test_name1").as_include_guard();
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
+    ///     .with_case_types(
+    ///         CaseTypes::new().with_const_define(CaseType::ScreamingSnakeCase)
+    ///     );
+    /// assert_eq!("TEST_NAME1_H", format!("{}", name.display(info)));
+    pub fn as_include_guard(&self) -> Name {
+        Name::new_with_type(&format!("{}_H", self.parts.join("_")), NameType::ConstDefine)
+    }
+
+    /// Creates a Name generator
+    /// 
+    /// This struct makes it easy to change the name format based on the
+    /// context of the generator.
+    /// 
+    /// ```
+    /// # use code_generator::CaseType;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::Name;
+    /// # use code_generator::NameType;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::CaseTypes;
+    /// #
+    /// let name = Name::new("test_name1").as_c_include();
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
+    ///     .with_case_types(
+    ///         CaseTypes::new().with_file_name(CaseType::SnakeCase)
+    ///     );
+    /// assert_eq!("test_name1.h", format!("{}", name.display(info)));
+    pub fn as_c_include(&self) -> Name {
+        Name::new_with_type(&format!("{}.h", self.parts.join("_")), NameType::File)
+    }
+
+    /// Creates a Name generator
+    /// 
+    /// This struct makes it easy to change the name format based on the
+    /// context of the generator.
+    /// 
+    /// ```
+    /// # use code_generator::CaseType;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::Name;
+    /// # use code_generator::NameType;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::CaseTypes;
+    /// #
+    /// let name = Name::new("test_name1").as_c_source();
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
+    ///     .with_case_types(
+    ///         CaseTypes::new().with_file_name(CaseType::SnakeCase)
+    ///     );
+    /// assert_eq!("test_name1.c", format!("{}", name.display(info)));
+    pub fn as_c_source(&self) -> Name {
+        Name::new_with_type(&format!("{}.c", self.parts.join("_")), NameType::File)
+    }
+
     fn caps_first_letter(string: String) -> String {
         let mut result = String::new();
 
@@ -185,14 +257,14 @@ impl Name {
 
     fn get_case_type(&self, info: CaseTypes) -> CaseType {
         match self.name_type {
-            NameType::Default => info.default_name_case,
+            NameType::Default => info.default_case,
             NameType::ConstDefine => info.const_define_case,
             NameType::Function => info.function_name_case,
             NameType::Member => info.member_name_case,
             NameType::Type => info.type_name_case,
             NameType::File => info.file_name_case,
             NameType::FixedCase(case) => case,
-            NameType::Bypass => info.default_name_case,
+            NameType::Bypass => info.default_case,
         }
     }
 }
