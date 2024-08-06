@@ -221,6 +221,7 @@ impl CodeGenerate for TypeDef {
         result = result.and(String::from(" ").generate(f, info));
         result = result.and(self.name.generate(f, info));
         result = result.and(String::from(";").generate(f, info));
+        
 
         result
     }

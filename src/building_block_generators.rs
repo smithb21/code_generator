@@ -276,6 +276,77 @@ impl CodeGenerate for Name {
     }
 }
 
+pub struct Include {
+    file_name: Name,
+    is_sys_inc: bool,
+}
+
+impl Include {
+    
+    /// Creates an Include generator
+    /// 
+    /// This struct allows includes to be adapted to the naming of the config
+    /// 
+    /// ```
+    /// # use code_generator::CaseType;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::Name;
+    /// # use code_generator::NameType;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::Include;
+    /// #
+    /// let inc = Include::new("my_testFile");
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
+    /// assert_eq!("#include \"MyTestfile.h\"", format!("{}", inc.display(info)));
+    /// ```
+    pub fn new(file_name: &str) -> Include {
+        Include {
+            file_name: Name::new_with_type(
+                file_name,
+                NameType::File
+            ),
+            is_sys_inc: false
+        }
+    }
+
+    /// Creates an Include generator
+    /// 
+    /// This struct allows includes to be adapted to the naming of the config
+    /// 
+    /// ```
+    /// # use code_generator::CaseType;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::Name;
+    /// # use code_generator::NameType;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::Include;
+    /// #
+    /// let inc = Include::new_sys("my_testFile");
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
+    /// assert_eq!("#include <my_testFile.h>", format!("{}", inc.display(info)));
+    /// ```
+    pub fn new_sys(file_name: &str) -> Include {
+        Include {
+            file_name: Name::new_with_type(
+                file_name,
+                NameType::Bypass
+            ),
+            is_sys_inc: true
+        }
+    }
+}
+
+impl CodeGenerate for Include {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        match self.is_sys_inc {
+            true => write!(f, "#include <{}.h>", self.file_name.display(info)),
+            false => write!(f, "#include \"{}.h\"", self.file_name.display(info))
+        }
+    }
+}
+
 /// The NewLine struct allows the generation info to decide the new line format
 #[derive(Clone, Copy)]
 pub struct NewLine {
