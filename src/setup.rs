@@ -1,7 +1,5 @@
 use std::fmt;
 
-use crate::Indentation;
-
 #[derive(Clone, Copy, Debug)]
 
 pub enum IndentationStyle {

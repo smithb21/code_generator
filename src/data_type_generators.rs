@@ -215,7 +215,7 @@ impl TypeDef {
 }
 
 impl CodeGenerate for TypeDef {
-    fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result = String::from("typedef ").generate(f, info);
         result = result.and(self.defined_type.generate(f, info));
         result = result.and(String::from(" ").generate(f, info));

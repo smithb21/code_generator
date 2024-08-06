@@ -316,11 +316,16 @@ impl CodeGenerate for NewLine {
 
 pub struct CodeSet {
     code_set: Vec<Box<dyn CodeGenerate>>,
+    is_separated: bool,
 }
 
 impl CodeSet {
     pub fn new(set: Vec<Box<dyn CodeGenerate>>) -> CodeSet {
-        CodeSet { code_set: set }
+        CodeSet { code_set: set, is_separated: false }
+    }
+
+    pub fn new_separated(set: Vec<Box<dyn CodeGenerate>>) -> CodeSet {
+        CodeSet { code_set: set, is_separated: true }
     }
 }
 
@@ -333,6 +338,9 @@ impl CodeGenerate for CodeSet {
 
             for item in iter {
                 result = result.and(NewLine::new().generate(f, info));
+                if self.is_separated {
+                    result = result.and(NewLine::new().generate(f, info));
+                }
                 result = result.and(Indentation::new().generate(f, info));
                 result = result.and(item.generate(f, info));
             }
