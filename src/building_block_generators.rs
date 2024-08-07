@@ -296,16 +296,13 @@ impl Include {
     /// # use code_generator::DisplayExt;
     /// # use code_generator::Include;
     /// #
-    /// let inc = Include::new("my_testFile");
+    /// let inc = Include::new(Name::new_with_type("my_testFile", NameType::File));
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("#include \"MyTestfile.h\"", format!("{}", inc.display(info)));
     /// ```
-    pub fn new(file_name: &str) -> Include {
+    pub fn new(file_name: Name) -> Include {
         Include {
-            file_name: Name::new_with_type(
-                file_name,
-                NameType::File
-            ),
+            file_name,
             is_sys_inc: false
         }
     }
@@ -323,7 +320,7 @@ impl Include {
     /// # use code_generator::DisplayExt;
     /// # use code_generator::Include;
     /// #
-    /// let inc = Include::new_sys("my_testFile");
+    /// let inc = Include::new_sys("my_testFile.h");
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("#include <my_testFile.h>", format!("{}", inc.display(info)));
     /// ```
@@ -341,7 +338,7 @@ impl Include {
 impl CodeGenerate for Include {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         match self.is_sys_inc {
-            true => write!(f, "#include <{}.h>", self.file_name.display(info)),
+            true => write!(f, "#include <{}>", self.file_name.display(info)),
             false => write!(f, "#include \"{}.h\"", self.file_name.display(info))
         }
     }
