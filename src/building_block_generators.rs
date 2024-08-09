@@ -426,8 +426,7 @@ pub struct JoinedCode {
 impl JoinedCode {
     /// Creates a JoinedCode generator
     /// 
-    /// This struct makes it easy to change the new line format based on the
-    /// context of the generator.
+    /// This struct makes it easy to join multiple generators without any separation
     /// 
     /// ```
     /// # use code_generator::CodeGenerationInfo;
@@ -463,32 +462,32 @@ impl CodeGenerate for JoinedCode {
 
 /// Creates a JoinedCode generator
 /// 
-/// This struct makes it easy to change the new line format based on the
-/// context of the generator.
+/// This macro makes it easy to create a JoinedCode struct
 /// 
 /// ```
 /// # use code_generator::CodeGenerationInfo;
 /// # use code_generator::DisplayExt;
 /// # use code_generator::JoinedCode;
+/// # use code_generator::CodeGenerate;
 /// # use code_generator::join_code;
 /// #
 /// let joined = join_code!(
 ///     String::from("This"),
-///     String::from(":"),
 ///     String::from("Is"),
-///     String::from(":"),
 ///     String::from("Joined")
 /// );
 ///
 /// let mut info = CodeGenerationInfo::new();
-/// assert_eq!("This:Is:Joined", format!("{}", joined.display(info)));
+/// assert_eq!("ThisIsJoined", format!("{}", JoinedCode::new(joined).display(info)));
 /// ```
 #[macro_export]
 macro_rules! join_code {
     ($($args:expr),*) => {{
-        JoinedCode::new(vec![
+        let temp: Vec<Box<dyn CodeGenerate>> = vec![
             $(Box::new($args)),*
-        ])
+        ];
+
+        temp
     }}
 }
 
