@@ -461,6 +461,37 @@ impl CodeGenerate for JoinedCode {
     }
 }
 
+/// Creates a JoinedCode generator
+/// 
+/// This struct makes it easy to change the new line format based on the
+/// context of the generator.
+/// 
+/// ```
+/// # use code_generator::CodeGenerationInfo;
+/// # use code_generator::DisplayExt;
+/// # use code_generator::JoinedCode;
+/// # use code_generator::join_code;
+/// #
+/// let joined = join_code!(
+///     String::from("This"),
+///     String::from(":"),
+///     String::from("Is"),
+///     String::from(":"),
+///     String::from("Joined")
+/// );
+///
+/// let mut info = CodeGenerationInfo::new();
+/// assert_eq!("This:Is:Joined", format!("{}", joined.display(info)));
+/// ```
+#[macro_export]
+macro_rules! join_code {
+    ($($args:expr),*) => {{
+        JoinedCode::new(vec![
+            $(Box::new($args)),*
+        ])
+    }}
+}
+
 /// Raw code with no formatting besides injecting newlines, and
 /// indentation based on the context
 impl CodeGenerate for String {

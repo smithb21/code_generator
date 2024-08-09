@@ -84,6 +84,23 @@ impl CodeGenerate for Function {
     }
 }
 
+pub struct FunctionCall {
+    name: Name,
+    params: SeparatedCode,
+}
+
+impl FunctionCall {
+    pub fn new(name: Name, params: Vec<Box<dyn CodeGenerate>>) -> FunctionCall {
+        FunctionCall { name: name.with_type(NameType::Function), params: SeparatedCode::new(params, Box::new(String::from(", "))) }
+    }
+}
+
+impl CodeGenerate for FunctionCall {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        write!(f, "{}({})", self.name.display(info), self.params.display(info))
+    }
+}
+
 pub struct HeaderFile {
     file_name: Name,
     content: CodeSet,
@@ -221,7 +238,7 @@ impl CodeGenerate for TypeDef {
         result = result.and(String::from(" ").generate(f, info));
         result = result.and(self.name.generate(f, info));
         result = result.and(String::from(";").generate(f, info));
-        
+
 
         result
     }
