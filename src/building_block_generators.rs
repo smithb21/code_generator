@@ -492,6 +492,37 @@ impl CodeGenerate for String {
     }
 }
 
+/// Raw code with no formatting besides injecting newlines, and
+/// indentation based on the context/// Creates a JoinedCode generator
+/// ```
+/// # use code_generator::CodeGenerationInfo;
+/// # use code_generator::DisplayExt;
+/// # use code_generator::JoinedCode;
+/// # use code_generator::CodeGenerate;
+/// # use code_generator::join_code;
+/// #
+/// let text = "Testing123";
+///
+/// let mut info = CodeGenerationInfo::new();
+/// assert_eq!("Testing123", format!("{}", text.display(info)));
+/// ```
+impl CodeGenerate for &str {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        let mut result: fmt::Result = fmt::Result::Ok(());
+        // First line doesn't print indentation
+        let mut iter = self.lines();
+        if let Some(line) = iter.next() {
+            result = result.and(result.and(write!(f, "{}", line)));
+        }
+        for line in iter {
+            result = result.and(NewLine::new().generate(f, info));
+            result = result.and(Indentation::new().generate(f, info));
+            result = result.and(write!(f, "{}", line));
+        }
+        return result;
+    }
+}
+
 pub struct SeparatedCode {
     items: Vec<Box<dyn CodeGenerate>>,
     separator: Box<dyn CodeGenerate>,
