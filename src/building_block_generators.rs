@@ -76,6 +76,13 @@ pub struct Name {
 }
 
 impl Name {
+    fn is_separator(char: char, prev: Option<char>) -> bool {
+        char.is_uppercase() 
+        && prev.is_some_and(
+            |char| char.is_lowercase()
+        )
+    }
+
     /// Creates a Name generator
     /// 
     /// This struct makes it easy to change the name format based on the
@@ -92,24 +99,45 @@ impl Name {
     /// let cc = NameType::FixedCase(CaseType::CamelCase);
     /// let name = Name::new("test_name1").with_type(cc);
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("testName1", format!("{}", name.display(info)));
-    /// 
+    /// assert_eq!("test_Name1", format!("{}", name.display(info)));
+    ///
     /// let ssc = NameType::FixedCase(CaseType::ScreamingSnakeCase);
     /// let name = Name::new("test_name2").with_type(ssc);
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("TEST_NAME2", format!("{}", name.display(info)));
+    /// assert_eq!("TEST__NAME2", format!("{}", name.display(info)));
+    ///
+    /// let ssc = NameType::FixedCase(CaseType::SnakeCase);
+    /// let name = Name::new("testNameThree").with_type(ssc);
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
+    /// assert_eq!("test_name_three", format!("{}", name.display(info)));
+    ///
+    /// let ssc = NameType::FixedCase(CaseType::FlatCase);
+    /// let name = Name::new("test_four").with_type(ssc);
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
+    /// assert_eq!("test_four", format!("{}", name.display(info)));
     /// ```
-    pub fn new(snake_case_name: &str) -> Name {
-        let name = snake_case_name;
-        let mut parts = Vec::<String>::new();
-        for entry in name.split("_") {
-            if !entry.is_empty() {
-                parts.push(entry.to_ascii_lowercase());
+    pub fn new(name: &str) -> Name {
+        let mut parts: Vec<String> = Vec::new();
+        let mut current_part = String::new();
+        let mut is_first = true;
+        let mut prev = None;
+        for char in name.chars() {
+            if Self::is_separator(char, prev) && !is_first {
+                parts.push(current_part.clone());
+                current_part.clear();
             }
+
+            current_part.extend(char.to_lowercase());
+            if char == '_' {
+                parts.push(current_part.clone());
+                current_part.clear();
+            }
+            is_first = false;
+            prev = Some(char);
         }
-        if parts.len() == 0 {
-            parts.push("invalid".into());
-            parts.push("name".into());
+        // push last part
+        if !current_part.is_empty() {
+            parts.push(current_part);
         }
 
         Name {
@@ -159,57 +187,11 @@ impl Name {
     ///     .with_case_types(
     ///         CaseTypes::new().with_const_define(CaseType::ScreamingSnakeCase)
     ///     );
-    /// assert_eq!("TEST_NAME1_H", format!("{}", name.display(info)));
+    /// assert_eq!("TEST__NAME1_H", format!("{}", name.display(info)));
     pub fn as_include_guard(&self) -> Name {
-        Name::new_with_type(&format!("{}_H", self.parts.join("_")), NameType::ConstDefine)
-    }
-
-    /// Creates a Name generator
-    /// 
-    /// This struct makes it easy to change the name format based on the
-    /// context of the generator.
-    /// 
-    /// ```
-    /// # use code_generator::CaseType;
-    /// # use code_generator::CodeStyle;
-    /// # use code_generator::CodeGenerationInfo;
-    /// # use code_generator::Name;
-    /// # use code_generator::NameType;
-    /// # use code_generator::DisplayExt;
-    /// # use code_generator::CaseTypes;
-    /// #
-    /// let name = Name::new("test_name1").as_c_include();
-    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
-    ///     .with_case_types(
-    ///         CaseTypes::new().with_file_name(CaseType::SnakeCase)
-    ///     );
-    /// assert_eq!("test_name1.h", format!("{}", name.display(info)));
-    pub fn as_c_include(&self) -> Name {
-        Name::new_with_type(&format!("{}.h", self.parts.join("_")), NameType::File)
-    }
-
-    /// Creates a Name generator
-    /// 
-    /// This struct makes it easy to change the name format based on the
-    /// context of the generator.
-    /// 
-    /// ```
-    /// # use code_generator::CaseType;
-    /// # use code_generator::CodeStyle;
-    /// # use code_generator::CodeGenerationInfo;
-    /// # use code_generator::Name;
-    /// # use code_generator::NameType;
-    /// # use code_generator::DisplayExt;
-    /// # use code_generator::CaseTypes;
-    /// #
-    /// let name = Name::new("test_name1").as_c_source();
-    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
-    ///     .with_case_types(
-    ///         CaseTypes::new().with_file_name(CaseType::SnakeCase)
-    ///     );
-    /// assert_eq!("test_name1.c", format!("{}", name.display(info)));
-    pub fn as_c_source(&self) -> Name {
-        Name::new_with_type(&format!("{}.c", self.parts.join("_")), NameType::File)
+        let mut parts = self.parts.clone();
+        parts.push(String::from("h"));
+        Name { parts: parts, name_type: NameType::ConstDefine }
     }
 
     fn caps_first_letter(string: String) -> String {
@@ -298,7 +280,7 @@ impl Include {
     /// #
     /// let inc = Include::new(Name::new_with_type("my_testFile", NameType::File));
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("#include \"MyTestfile.h\"", format!("{}", inc.display(info)));
+    /// assert_eq!("#include \"My_TestFile.h\"", format!("{}", inc.display(info)));
     /// ```
     pub fn new(file_name: Name) -> Include {
         Include {

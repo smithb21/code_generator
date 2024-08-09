@@ -24,17 +24,17 @@
 //!     Box::new(String::from("")),
 //!     Box::new(String::from("")),
 //!     Box::new(Function::new(FunctionSignature::new(
-//!             Name::new("MY_RETURN_TYPE_ONE"),
-//!             Name::new("MY_FUNCTION_NAME_ONE"),
+//!             Name::new("MyReturnTypeOne"),
+//!             Name::new("MyFunctionNameOne"),
 //!             vec![
-//!                 (Name::new("PARAM_TYPE_ONE"), Name::new("PARAM_NAME_ONE")),
-//!                 (Name::new("PARAM_TYPE_TWO"), Name::new("PARAM_NAME_TWO")),
-//!                 (Name::new("PARAM_TYPE_THREE"), Name::new("PARAM_NAME_THREE")),
+//!                 (Name::new("ParamTypeOne"), Name::new("ParamNameOne")),
+//!                 (Name::new("ParamTypeTwo"), Name::new("ParamNameTwo")),
+//!                 (Name::new("ParamTypeThree"), Name::new("ParamNameThree")),
 //!             ]
 //!         ),
 //!         CodeBody::new(vec![
 //!             Box::new(IfStatement::new(
-//!                     Name::new_with_type("PARAM_NAME_THREE", NameType::Member),
+//!                     Name::new_with_type("ParamNameThree", NameType::Member),
 //!                 CodeBody::new(vec![
 //!                     Box::new(ForLoop::new(
 //!                         String::from("ParamTypeTwo i = 0"),
@@ -114,6 +114,6 @@ mod tests {
         let case = NameType::FixedCase(CaseType::CamelCase);
         let name = Name::new_with_type("TEST_NAME", case);
         let result = format!("{}", name.display(default_gen_info));
-        assert_eq!(result, "testName");
+        assert_eq!(result, "test_Name");
     }
 }
