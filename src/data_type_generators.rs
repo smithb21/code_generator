@@ -87,17 +87,31 @@ impl CodeGenerate for Function {
 pub struct FunctionCall {
     name: Name,
     params: SeparatedCode,
+    is_terminated: bool,
 }
 
 impl FunctionCall {
     pub fn new(name: Name, params: Vec<Box<dyn CodeGenerate>>) -> FunctionCall {
-        FunctionCall { name: name.with_type(NameType::Function), params: SeparatedCode::new(params, Box::new(String::from(", "))) }
+        FunctionCall {
+            name: name.with_type(NameType::Function),
+            params: SeparatedCode::new(params, Box::new(String::from(", "))),
+            is_terminated: false
+        }
+    }
+
+    pub fn new_with_end(name: Name, params: Vec<Box<dyn CodeGenerate>>) -> FunctionCall {
+        FunctionCall {
+            name: name.with_type(NameType::Function),
+            params: SeparatedCode::new(params, Box::new(String::from(", "))),
+            is_terminated: true
+        }
     }
 }
 
 impl CodeGenerate for FunctionCall {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
-        write!(f, "{}({})", self.name.display(info), self.params.display(info))
+        let termination = if self.is_terminated {";"} else {""};
+        write!(f, "{}({}){}", self.name.display(info), self.params.display(info), termination)
     }
 }
 
