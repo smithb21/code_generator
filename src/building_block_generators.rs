@@ -582,6 +582,31 @@ impl CodeBody {
     pub fn new(code: Vec<Box<dyn CodeGenerate>>) -> CodeBody {
         CodeBody {raw_code: CodeSet::new(code)}
     }
+
+    /// Creates a CodeBody generator
+    /// 
+    /// This struct is used for code bodies. Think the body to an if statement,
+    /// function, or struct. This handles the brace/newline format of that body
+    /// 
+    /// ```
+    /// # use code_generator::CodeGenerationInfo;
+    /// # use code_generator::CodeStyle;
+    /// # use code_generator::DisplayExt;
+    /// # use code_generator::CodeBody;
+    /// # use code_generator::CodeSet;
+    /// #
+    /// let code_body = CodeBody::from_set(CodeSet::new(vec![
+    ///     Box::new(String::from("Body"))
+    /// ]));
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
+    /// assert_eq!("{\r\n    Body\r\n}", format!("{}", code_body.display(info)));
+    /// 
+    /// let info = CodeGenerationInfo::from_style(CodeStyle::Horstmann);
+    /// assert_eq!("{   Body\r\n}", format!("{}", code_body.display(info)));
+    /// ```
+    pub fn from_set(code: CodeSet) -> CodeBody {
+        CodeBody { raw_code: code }
+    }
 }
 
 impl CodeGenerate for CodeBody {

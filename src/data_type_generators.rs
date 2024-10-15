@@ -70,9 +70,9 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn new(signature: FunctionSignature, body: CodeBody) -> Function {
+    pub fn new(signature: FunctionSignature, body: CodeSet) -> Function {
         Function {
-            content: HeaderPlusBody::new(signature, body)
+            content: HeaderPlusBody::new(signature, CodeBody::from_set(body))
         }
     }
 }

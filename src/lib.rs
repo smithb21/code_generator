@@ -32,7 +32,7 @@
 //!                 (Name::new("ParamTypeThree"), Name::new("ParamNameThree")),
 //!             ]
 //!         ),
-//!         CodeBody::new(vec![
+//!         CodeSet::new(vec![
 //!             Box::new(IfStatement::new(
 //!                     Name::new_with_type("ParamNameThree", NameType::Member),
 //!                 CodeBody::new(vec![
