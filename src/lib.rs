@@ -96,6 +96,7 @@ mod building_block_generators;
 mod setup;
 mod flow_control_generators;
 mod data_type_generators;
+mod as_case;
 
 pub use building_block_generators::*;
 pub use setup::*;
