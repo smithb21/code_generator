@@ -63,6 +63,16 @@ impl<'a, T: ?Sized> Cased<'a, T> {
             CaseType::ScreamingSnakeCase => { write!(f, "{}", char.to_uppercase()) }
         }
     }
+    fn write_chunk_separator(case_type: CaseType, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match case_type {
+            CaseType::FlatCase => { core::fmt::Result::Ok(()) }
+            CaseType::ScreamingCase => { core::fmt::Result::Ok(()) }
+            CaseType::CamelCase => { core::fmt::Result::Ok(()) }
+            CaseType::PascalCase => { core::fmt::Result::Ok(()) }
+            CaseType::SnakeCase => { write!(f, "{}", '_') }
+            CaseType::ScreamingSnakeCase => { write!(f, "{}", '_') }
+        }
+    }
     fn casify(chars: Chars<'_>, case_type: CaseType, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut result = core::fmt::Result::Ok(());
 
@@ -81,7 +91,10 @@ impl<'a, T: ?Sized> Cased<'a, T> {
 
             match (is_first, is_first_in_chunk) {
                 (true, _) => {result = result.and(Self::write_first_char(case_type, char, f));}
-                (_, true) => {result = result.and(Self::write_first_char_in_chunk(case_type, char, f));}
+                (_, true) => {
+                    result = result.and(Self::write_chunk_separator(case_type, f));
+                    result = result.and(Self::write_first_char_in_chunk(case_type, char, f));
+                }
                 (_, false) => {result = result.and(Self::write_default_char(case_type, char, f));}
             }
 
