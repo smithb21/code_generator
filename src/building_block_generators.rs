@@ -110,14 +110,14 @@ impl Name {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("test_four", format!("{}", name.display(info)));
     /// ```
-    pub fn new(name: String) -> Name {
+    pub fn new(name: impl Into<String>) -> Name {
         Name {
-            source: name,
+            source: name.into(),
             name_type: NameType::Default
         }
     }
 
-    pub fn new_with_type(snake_case_name: String, name_type: NameType) -> Name {
+    pub fn new_with_type(snake_case_name: impl Into<String>, name_type: NameType) -> Name {
         Name::new(snake_case_name).with_type(name_type)
     }
 
@@ -226,7 +226,7 @@ impl Include {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("#include <my_testFile.h>", format!("{}", inc.display(info)));
     /// ```
-    pub fn new_sys(file_name: String) -> Include {
+    pub fn new_sys(file_name: impl Into<String>) -> Include {
         Include {
             file_name: Name::new_with_type(
                 file_name,
