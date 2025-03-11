@@ -58,7 +58,7 @@ impl<'a, T: ?Sized> Cased<'a, T> {
             CaseType::FlatCase => { write!(f, "{}", char.to_lowercase()) }
             CaseType::ScreamingCase => { write!(f, "{}", char.to_uppercase()) }
             CaseType::CamelCase => { write!(f, "{}", char.to_lowercase()) }
-            CaseType::PascalCase => { write!(f, "{}", char.to_uppercase()) }
+            CaseType::PascalCase => { write!(f, "{}", char.to_lowercase()) }
             CaseType::SnakeCase => { write!(f, "{}", char.to_lowercase()) }
             CaseType::ScreamingSnakeCase => { write!(f, "{}", char.to_uppercase()) }
         }
