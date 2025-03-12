@@ -1,5 +1,6 @@
 use std::fmt;
 use crate::setup::*;
+use crate::as_case::AsCase;
 
 /// Indentation generator
 /// 
@@ -71,18 +72,11 @@ pub enum NameType {
 
 #[derive(Clone)]
 pub struct Name {
-    parts: Vec<String>,
+    source: String,
     name_type: NameType
 }
 
 impl Name {
-    fn is_separator(char: char, prev: Option<char>) -> bool {
-        char.is_uppercase() 
-        && prev.is_some_and(
-            |char| char.is_lowercase()
-        )
-    }
-
     /// Creates a Name generator
     /// 
     /// This struct makes it easy to change the name format based on the
@@ -116,45 +110,15 @@ impl Name {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("test_four", format!("{}", name.display(info)));
     /// ```
-    pub fn new(name: &str) -> Name {
-        let mut parts: Vec<String> = Vec::new();
-        let mut current_part = String::new();
-        let mut is_first = true;
-        let mut prev = None;
-        for char in name.chars() {
-            if Self::is_separator(char, prev) && !is_first {
-                parts.push(current_part.clone());
-                current_part.clear();
-            }
-
-            current_part.extend(char.to_lowercase());
-            if char == '_' {
-                parts.push(current_part.clone());
-                current_part.clear();
-            }
-            is_first = false;
-            prev = Some(char);
-        }
-        // push last part
-        if !current_part.is_empty() {
-            parts.push(current_part);
-        }
-
+    pub fn new(name: impl Into<String>) -> Name {
         Name {
-            parts: parts,
+            source: name.into(),
             name_type: NameType::Default
         }
     }
 
-    pub fn new_with_type(snake_case_name: &str, name_type: NameType) -> Name {
-        if let NameType::Bypass = name_type {
-            Name {
-                parts: vec![snake_case_name.into()],
-                name_type: NameType::Bypass
-            }
-        } else {
-            Name::new(snake_case_name).with_type(name_type)
-        }
+    pub fn new_with_type(snake_case_name: impl Into<String>, name_type: NameType) -> Name {
+        Name::new(snake_case_name).with_type(name_type)
     }
 
     pub fn with_type(mut self, name_type: NameType) -> Name {
@@ -188,53 +152,9 @@ impl Name {
     ///         CaseTypes::new().with_const_define(CaseType::ScreamingSnakeCase)
     ///     );
     /// assert_eq!("TEST__NAME1_H", format!("{}", name.display(info)));
-    pub fn as_include_guard(&self) -> Name {
-        let mut parts = self.parts.clone();
-        parts.push(String::from("h"));
-        Name { parts: parts, name_type: NameType::ConstDefine }
-    }
-
-    fn caps_first_letter(string: String) -> String {
-        let mut result = String::new();
-
-        let mut iter = string.chars();
-        if let Some(char) = iter.next() {
-            result.push(char.to_ascii_uppercase());
-        }
-
-        for char in iter {
-            result.push(char);
-        }
-
-        result
-    }
-
-    fn casify(&self, case: CaseType) -> String {
-        if let NameType::Bypass = self.name_type {
-            return self.parts.join("");
-        }
-
-        let mut parts = Vec::new();
-        let mut is_first = true;
-        for part in self.parts.iter() {
-            parts.push (match case {
-                CaseType::CamelCase => if is_first {part.clone()} else {Self::caps_first_letter(part.clone())},
-                CaseType::FlatCase => part.clone(),
-                CaseType::PascalCase => Self::caps_first_letter(part.clone()),
-                CaseType::ScreamingCase => part.to_ascii_uppercase(),
-                CaseType::ScreamingSnakeCase => part.to_ascii_uppercase(),
-                CaseType::SnakeCase => part.clone(),
-            });
-            is_first = false;
-        }
-        match case {
-            CaseType::CamelCase => parts.join(""),
-            CaseType::FlatCase => parts.join(""),
-            CaseType::PascalCase => parts.join(""),
-            CaseType::ScreamingCase => parts.join(""),
-            CaseType::ScreamingSnakeCase => parts.join("_"),
-            CaseType::SnakeCase => parts.join("_"),
-        }
+    pub fn as_include_guard(mut self) -> Name {
+        self.source.push('H');
+        self
     }
 
     fn get_case_type(&self, info: CaseTypes) -> CaseType {
@@ -254,7 +174,7 @@ impl Name {
 impl CodeGenerate for Name {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let case_type = self.get_case_type(info.case_types);
-        write!(f, "{}", self.casify(case_type))
+        write!(f, "{}", self.source.as_case(case_type))
     }
 }
 
@@ -306,7 +226,7 @@ impl Include {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("#include <my_testFile.h>", format!("{}", inc.display(info)));
     /// ```
-    pub fn new_sys(file_name: &str) -> Include {
+    pub fn new_sys(file_name: impl Into<String>) -> Include {
         Include {
             file_name: Name::new_with_type(
                 file_name,

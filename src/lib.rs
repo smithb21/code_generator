@@ -96,6 +96,7 @@ mod building_block_generators;
 mod setup;
 mod flow_control_generators;
 mod data_type_generators;
+mod as_case;
 
 pub use building_block_generators::*;
 pub use setup::*;
@@ -112,8 +113,8 @@ mod tests {
     fn name_camel_case() {
         let default_gen_info: CodeGenerationInfo = CodeGenerationInfo::from_style(CodeStyle::KnR);
         let case = NameType::FixedCase(CaseType::CamelCase);
-        let name = Name::new_with_type("TEST_NAME", case);
+        let name = Name::new_with_type("testName", case);
         let result = format!("{}", name.display(default_gen_info));
-        assert_eq!(result, "test_Name");
+        assert_eq!(result, "testName");
     }
 }
