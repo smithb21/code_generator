@@ -13,9 +13,10 @@
 * Unit tests
 * Documentation
 * Rework Names and add prepend/append operations
+* Consider merging Composition, and Output phase into one. This would give an interface that sort of feels like an immediate mode gui type of structure.
 
-### Planned Breaking Changes (0.2.x)
-* Names use a special character to separate parts, not caps, or underscore.
+### Breaking Changes from 0.1.x
+* Names use a special character '`' to separate parts. They also consider capital characters to be the start of a new block, so "TEst" would be considered having parts ["T", "Est"].
 
 ## Limitations
 
