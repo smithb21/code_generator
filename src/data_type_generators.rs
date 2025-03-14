@@ -2,41 +2,44 @@ use std::fmt;
 use crate::building_block_generators::*;
 use crate::setup::*;
 
-pub struct FunctionSignature {
-    function_name: Name,
-    parameters: SeparatedCode,
-    return_type: Name,
+pub struct FunctionSignature<'a> {
+    function_name: Name<'a>,
+    parameters: &'a [(Name<'a>, Name<'a>)],
+    return_type: Name<'a>,
 }
 
-impl FunctionSignature {
-    pub fn new(return_type: Name, name: Name, parameters: Vec<(Name, Name)>) -> FunctionSignature {
-        let mut set = Vec::<Box<dyn CodeGenerate>>::new();
+impl<'a> FunctionSignature<'a> {
+    pub fn new(return_type: Name<'a>, name: Name<'a>, parameters: &'a [(Name<'a>, Name<'a>)]) -> FunctionSignature<'a> {
+        /*let mut set = Vec::<Box<dyn CodeGenerate>>::new();
         for (type_name, param_name) in parameters {
             set.push(Box::new(JoinedCode::new(vec![Box::new(type_name.with_type(NameType::Type)), Box::new(String::from(" ")), Box::new(param_name.with_type(NameType::Member))])))
-        }
+        }*/
 
         FunctionSignature {
             return_type: return_type.with_type(NameType::Type),
             function_name: name.with_type(NameType::Function),
-            parameters: SeparatedCode::new(set, Box::new(String::from(", "))),
+            parameters: parameters,
         }
     }
 }
 
-impl From<FunctionSignature> for FunctionDeclaration {
-    fn from(value: FunctionSignature) -> Self {
-        Self { signature: value }
-    }
-}
-
-impl CodeGenerate for FunctionSignature {
+impl<'a> CodeGenerate for FunctionSignature<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
         result = result.and(self.return_type.generate(f, info));
         result = result.and(write!(f, " "));
         result = result.and(self.function_name.generate(f, info));
         result = result.and(write!(f, "("));
-        result = result.and(self.parameters.generate(f, info));
+        let test = self
+        .parameters
+        .iter()
+        .map(|(p_type, name)| {
+            let returned: [&dyn CodeGenerate;3] = [
+                p_type, &" ", name
+            ];
+            JoinedCode::new(&returned.map(|thing|));
+        });
+        SeparatedCode::new(&test, &", ").generate(f, info);
         result = result.and(write!(f, ")"));
 
         result
@@ -62,6 +65,12 @@ impl CodeGenerate for FunctionDeclaration {
         result = result.and(write!(f, ";"));
 
         result
+    }
+}
+
+impl<'a> From<FunctionSignature<'a>> for FunctionDeclaration {
+    fn from(value: FunctionSignature) -> Self {
+        Self { signature: value }
     }
 }
 

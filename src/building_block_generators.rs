@@ -1,4 +1,5 @@
 use std::fmt;
+use crate::iterable::GetIter;
 use crate::setup::*;
 use crate::as_case::AsCase;
 
@@ -70,13 +71,13 @@ pub enum NameType {
     Bypass,
 }
 
-#[derive(Clone)]
-pub struct Name {
-    source: String,
+#[derive(Copy, Clone)]
+pub struct Name<'a> {
+    source: &'a str,
     name_type: NameType
 }
 
-impl Name {
+impl<'a> Name<'a> {
     /// Creates a Name generator
     /// 
     /// This struct makes it easy to change the name format based on the
@@ -110,18 +111,18 @@ impl Name {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("test_four", format!("{}", name.display(info)));
     /// ```
-    pub fn new(name: impl Into<String>) -> Name {
+    pub fn new(name: &'a str) -> Name<'a> {
         Name {
             source: name.into(),
             name_type: NameType::Default
         }
     }
 
-    pub fn new_with_type(snake_case_name: impl Into<String>, name_type: NameType) -> Name {
-        Name::new(snake_case_name).with_type(name_type)
+    pub fn new_with_type(name: &'a str, name_type: NameType) -> Name<'a> {
+        Name::new(name).with_type(name_type)
     }
 
-    pub fn with_type(mut self, name_type: NameType) -> Name {
+    pub fn with_type(mut self, name_type: NameType) -> Name<'a> {
         match self.name_type {
             // Fixed/Bypass case bypasses the name type specialization
             NameType::Bypass => (),
@@ -129,31 +130,6 @@ impl Name {
             _ => self.name_type = name_type,
         }
 
-        self
-    }
-
-    /// Creates a Name generator
-    /// 
-    /// This struct makes it easy to change the name format based on the
-    /// context of the generator.
-    /// 
-    /// ```
-    /// # use code_generator::CaseType;
-    /// # use code_generator::CodeStyle;
-    /// # use code_generator::CodeGenerationInfo;
-    /// # use code_generator::Name;
-    /// # use code_generator::NameType;
-    /// # use code_generator::DisplayExt;
-    /// # use code_generator::CaseTypes;
-    /// #
-    /// let name = Name::new("test_name1").as_include_guard();
-    /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR)
-    ///     .with_case_types(
-    ///         CaseTypes::new().with_const_define(CaseType::ScreamingSnakeCase)
-    ///     );
-    /// assert_eq!("TEST__NAME1_H", format!("{}", name.display(info)));
-    pub fn as_include_guard(mut self) -> Name {
-        self.source.push('H');
         self
     }
 
@@ -171,19 +147,19 @@ impl Name {
     }
 }
 
-impl CodeGenerate for Name {
+impl<'a> CodeGenerate for Name<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let case_type = self.get_case_type(info.case_types);
         write!(f, "{}", self.source.as_case(case_type))
     }
 }
 
-pub struct Include {
-    file_name: Name,
+pub struct Include<'a> {
+    file_name: Name<'a>,
     is_sys_inc: bool,
 }
 
-impl Include {
+impl<'a> Include<'a> {
     
     /// Creates an Include generator
     /// 
@@ -226,18 +202,15 @@ impl Include {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("#include <my_testFile.h>", format!("{}", inc.display(info)));
     /// ```
-    pub fn new_sys(file_name: impl Into<String>) -> Include {
+    pub fn new_sys(file_name: Name<'a>) -> Include<'a> {
         Include {
-            file_name: Name::new_with_type(
-                file_name,
-                NameType::Bypass
-            ),
+            file_name: file_name.with_type(NameType::Bypass),
             is_sys_inc: true
         }
     }
 }
 
-impl CodeGenerate for Include {
+impl<'a> CodeGenerate for Include<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         match self.is_sys_inc {
             true => write!(f, "#include <{}>", self.file_name.display(info)),
@@ -284,25 +257,28 @@ impl CodeGenerate for NewLine {
     }
 }
 
-pub struct CodeSet {
-    code_set: Vec<Box<dyn CodeGenerate>>,
+#[derive(Copy, Clone)]
+pub struct CodeSet<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+    code_set: &'a T,
     is_separated: bool,
 }
 
-impl CodeSet {
-    pub fn new(set: Vec<Box<dyn CodeGenerate>>) -> CodeSet {
-        CodeSet { code_set: set, is_separated: false }
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeSet<'a, T> {
+    pub fn new(
+        into: &'a T) -> CodeSet<'a, T> {
+        CodeSet { code_set: into, is_separated: false }
     }
 
-    pub fn new_separated(set: Vec<Box<dyn CodeGenerate>>) -> CodeSet {
-        CodeSet { code_set: set, is_separated: true }
+    pub fn new_separated(
+        into: &'a T) -> CodeSet<'a, T> {
+        CodeSet { code_set: into, is_separated: true }
     }
 }
 
-impl CodeGenerate for CodeSet {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeSet<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result = fmt::Result::Ok(());
-        let mut iter = self.code_set.iter();
+        let mut iter = self.code_set.get_iter();
         if let Some(item) = iter.next() {
             result = result.and(item.generate(f, info));
 
@@ -321,11 +297,11 @@ impl CodeGenerate for CodeSet {
 
 /// The JoinedCode struct joins multiple sections of code with no further
 /// formatting, or configuration done outside, inside, or between units.
-pub struct JoinedCode {
-    code_set: Vec<Box<dyn CodeGenerate>>,
+pub struct JoinedCode<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+    code_set: &'a T,
 }
 
-impl JoinedCode {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> JoinedCode<'a, T> {
     /// Creates a JoinedCode generator
     /// 
     /// This struct makes it easy to join multiple generators without any separation
@@ -345,16 +321,16 @@ impl JoinedCode {
     /// let mut info = CodeGenerationInfo::new();
     /// assert_eq!("This:Is:Joined", format!("{}", joined.display(info)));
     /// ```
-    pub fn new(set: Vec<Box<dyn CodeGenerate>>) -> JoinedCode {
+    pub fn new(set: &'a T) -> JoinedCode<'a, T> {
         JoinedCode { code_set: set }
     }
 }
 
-impl CodeGenerate for JoinedCode {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for JoinedCode<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result = fmt::Result::Ok(());
 
-        for item in self.code_set.iter() {
+        for item in self.code_set.get_iter() {
             result = result.and(item.generate(f, info));
         }
 
@@ -382,16 +358,21 @@ impl CodeGenerate for JoinedCode {
 /// let mut info = CodeGenerationInfo::new();
 /// assert_eq!("ThisIsJoined", format!("{}", JoinedCode::new(joined).display(info)));
 /// ```
+/*macro_rules! count {
+    () => (0usize);
+    ( $x:tt $($xs:tt)* ) => (1usize + count!($($xs)*));
+}
+
 #[macro_export]
 macro_rules! join_code {
     ($($args:expr),*) => {{
-        let temp: Vec<Box<dyn CodeGenerate>> = vec![
-            $(Box::new($args)),*
+        let temp: [&dyn CodeGenerate; count!($($args)*)] = [
+            $($args),*
         ];
 
         temp
     }}
-}
+} TODO: Remove or Keep??? */
 
 /// Raw code with no formatting besides injecting newlines, and
 /// indentation based on the context
@@ -443,23 +424,22 @@ impl CodeGenerate for &str {
     }
 }
 
-pub struct SeparatedCode {
-    items: Vec<Box<dyn CodeGenerate>>,
-    separator: Box<dyn CodeGenerate>,
-    // TODO: newlines in GeneratorInfo?
+pub struct SeparatedCode<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+    items: &'a T,
+    separator: &'a dyn CodeGenerate,
 }
 
-impl SeparatedCode {
-    pub fn new(items: Vec<Box<dyn CodeGenerate>>, separator: Box<dyn CodeGenerate>) -> SeparatedCode {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> SeparatedCode<'a, T> {
+    pub fn new(items: &'a T, separator: &'a dyn CodeGenerate) -> SeparatedCode<'a, T> {
         SeparatedCode { items: items, separator: separator }
     }
 }
 
-impl CodeGenerate for SeparatedCode {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for SeparatedCode<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
 
-        let mut iterator = self.items.iter();
+        let mut iterator = self.items.get_iter();
 
         if let Some(item) = iterator.next() {
             result = result.and(item.generate(f, info));
@@ -474,11 +454,11 @@ impl CodeGenerate for SeparatedCode {
     }
 }
 
-pub struct CodeBody {
-    raw_code: CodeSet,
+pub struct CodeBody<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+    raw_code: CodeSet<'a, T>,
 }
 
-impl CodeBody {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeBody<'a, T> {
     /// Creates a CodeBody generator
     /// 
     /// This struct is used for code bodies. Think the body to an if statement,
@@ -499,7 +479,7 @@ impl CodeBody {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::Horstmann);
     /// assert_eq!("{   Body\r\n}", format!("{}", code_body.display(info)));
     /// ```
-    pub fn new(code: Vec<Box<dyn CodeGenerate>>) -> CodeBody {
+    pub fn new(code: &'a T) -> CodeBody<'a, T> {
         CodeBody {raw_code: CodeSet::new(code)}
     }
 
@@ -524,12 +504,12 @@ impl CodeBody {
     /// let info = CodeGenerationInfo::from_style(CodeStyle::Horstmann);
     /// assert_eq!("{   Body\r\n}", format!("{}", code_body.display(info)));
     /// ```
-    pub fn from_set(code: CodeSet) -> CodeBody {
+    pub fn from_set(code: CodeSet<'a, T>) -> CodeBody<'a, T> {
         CodeBody { raw_code: code }
     }
 }
 
-impl CodeGenerate for CodeBody {
+impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeBody<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
         match info.indent_style {
@@ -598,12 +578,12 @@ impl CodeGenerate for CodeBody {
     }
 }
 
-pub struct HeaderPlusBody<HT> {
+pub struct HeaderPlusBody<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> {
     header: HT,
-    body: CodeBody,
+    body: CodeBody<'a, BT>,
 }
 
-impl<HT> HeaderPlusBody<HT> {
+impl<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> HeaderPlusBody<'a, HT, BT> {
     /// Creates a HeaderPlusBody generator
     /// 
     /// This struct is used for joining headers and bodies. For example joining
@@ -632,12 +612,12 @@ impl<HT> HeaderPlusBody<HT> {
     ///     format!("{}", header_plus_body.display(info))
     /// );
     /// ```
-    pub fn new(header: HT, body: CodeBody) -> HeaderPlusBody<HT>{
+    pub fn new(header: HT, body: CodeBody<'a, BT>) -> HeaderPlusBody<'a, HT, BT>{
         HeaderPlusBody {header: header, body: body}
     }
 }
 
-impl<HT> CodeGenerate for HeaderPlusBody<HT>
+impl<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for HeaderPlusBody<'a, HT, BT>
 where HT: CodeGenerate,{
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());

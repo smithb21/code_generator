@@ -343,3 +343,10 @@ where T: CodeGenerate {
         DisplayHandler::new(self, info)
     }
 }
+
+#[macro_export]
+macro_rules! generate_code {
+    ($($args:expr),*) => {{
+        ($args).generate(f, info)*
+    }}
+}
