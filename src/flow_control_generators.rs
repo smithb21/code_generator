@@ -1,92 +1,90 @@
 use std::fmt;
 use crate::building_block_generators::*;
+use crate::iterable::GetIter;
 use crate::setup::*;
 
-pub struct IfStatement {
-    content: HeaderPlusBody<JoinedCode>,
+pub struct IfStatement<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> {
+    condition: CT,
+    body: &'a BI,
 }
 
-impl IfStatement {
-    pub fn new<CT>(condition: CT, body: CodeBody) -> IfStatement
-    where CT: CodeGenerate + 'static {
-        IfStatement {
-            content: HeaderPlusBody::new(
-                JoinedCode::new(
-                    vec![
-                        Box::new(String::from("if (")),
-                        Box::new(condition),
-                        Box::new(String::from(")"))
-                    ]
-                ),
-                body
-            )
-        }
+impl<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> IfStatement<'a, CT, BI> {
+    pub fn new(condition: CT, body: &'a BI) -> IfStatement<'a, CT, BI> {
+        IfStatement { condition, body }
     }
 }
 
-impl CodeGenerate for IfStatement {
+impl<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> CodeGenerate for IfStatement<'a, CT, BI> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::If;
-        self.content.generate(f, info)
+        let header: &[&dyn CodeGenerate;3] = &[&"if (", &self.condition, &")"];
+        HeaderPlusBody::new(CodeSet::new(&header), CodeBody::new(self.body)).generate(f, info)
     }
 }
 
-pub struct WhileStatement {
-    content: HeaderPlusBody<JoinedCode>,
+pub struct WhileStatement<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> {
+    condition: CT,
+    body: &'a BI,
 }
 
-impl WhileStatement {
-    pub fn new<CT>(condition: CT, body: CodeBody) -> WhileStatement 
-    where CT: CodeGenerate + 'static {
+impl<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> WhileStatement<'a, CT, BI> {
+    pub fn new(condition: CT, body: &'a BI) -> WhileStatement<'a, CT, BI> 
+    where CT: CodeGenerate {
         WhileStatement {
-            content: HeaderPlusBody::new(
-                JoinedCode::new(
-                    vec![
-                        Box::new(String::from("while (")),
-                        Box::new(condition),
-                        Box::new(String::from(")"))
-                    ]
-                ),
-                body
-            )
+            condition,
+            body
         }
     }
 }
 
-impl CodeGenerate for WhileStatement {
+impl<'a, CT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> CodeGenerate for WhileStatement<'a, CT, BI> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::While;
-        self.content.generate(f, info)
+        let header: &[&dyn CodeGenerate;3] = &[&"while (", &self.condition, &")"];
+        HeaderPlusBody::new(
+            CodeSet::new(&header),
+            CodeBody::new(
+                self.body
+            )
+        ).generate(f, info)
     }
 }
 
-pub struct ForLoop {
-    content: HeaderPlusBody<JoinedCode>,
+pub struct ForLoop<'a, IT: CodeGenerate, CT: CodeGenerate, UT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> {
+    init: IT,
+    continuation: CT,
+    update: UT,
+    body: &'a BI,
 }
 
-impl ForLoop {
-    pub fn new<IT, CT, UT>(init_code: IT, continuation_code: CT, update_code: UT, body: Vec<Box<dyn CodeGenerate>>) -> ForLoop
-    where IT: CodeGenerate + 'static,
-        CT: CodeGenerate + 'static,
-        UT: CodeGenerate + 'static {
-        ForLoop { content: HeaderPlusBody::new(
-            JoinedCode::new(vec![
-                Box::new(String::from("for (")),
-                Box::new(init_code),
-                Box::new(String::from("; ")),
-                Box::new(continuation_code),
-                Box::new(String::from("; ")),
-                Box::new(update_code),
-                Box::new(String::from(")")),
-            ]),
-            CodeBody::new(body)
-        ) }
+impl<'a, IT: CodeGenerate, CT: CodeGenerate, UT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> ForLoop<'a, IT, CT, UT, BI> {
+    pub fn new(init_code: IT, continuation_code: CT, update_code: UT, body: &'a BI) -> ForLoop<'a, IT, CT, UT, BI> {
+        ForLoop {
+            init: init_code,
+            continuation: continuation_code,
+            update: update_code,
+            body
+        }
     }
 }
 
-impl CodeGenerate for ForLoop {
+impl<'a, IT: CodeGenerate, CT: CodeGenerate, UT: CodeGenerate, BI: GetIter<Item: CodeGenerate>> CodeGenerate for ForLoop<'a, IT, CT, UT, BI> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::ForLoop;
-        self.content.generate(f, info)
+        let header: &[&dyn CodeGenerate;7] = &[
+            &"for (",
+            &self.init,
+            &"; ",
+            &self.continuation,
+            &";",
+            &self.update,
+            &")"
+        ];
+        HeaderPlusBody::new(
+            CodeSet::new(&header),
+            CodeBody::new(
+                self.body
+            )
+        ).generate(f, info)
     }
 }

@@ -327,7 +327,7 @@ pub trait CodeGenerate {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result;
 }
 
-impl<T: CodeGenerate> CodeGenerate for &T {
+impl<T: CodeGenerate+?Sized> CodeGenerate for &T {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         (*self).generate(f, info)
     }

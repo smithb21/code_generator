@@ -1,4 +1,5 @@
 use std::fmt;
+use std::marker::PhantomData;
 use crate::iterable::GetIter;
 use crate::setup::*;
 use crate::as_case::AsCase;
@@ -258,14 +259,13 @@ impl CodeGenerate for NewLine {
 }
 
 #[derive(Copy, Clone)]
-pub struct CodeSet<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+pub struct CodeSet<'a, T: GetIter<Item: CodeGenerate>> {
     code_set: &'a T,
     is_separated: bool,
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeSet<'a, T> {
-    pub fn new(
-        into: &'a T) -> CodeSet<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeSet<'a, T> {
+    pub fn new(into: &'a T) -> CodeSet<'a, T> {
         CodeSet { code_set: into, is_separated: false }
     }
 
@@ -275,7 +275,7 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeSet<'a, T> {
     }
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeSet<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeGenerate for CodeSet<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result = fmt::Result::Ok(());
         let mut iter = self.code_set.get_iter();
@@ -297,11 +297,12 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeSet<'a,
 
 /// The JoinedCode struct joins multiple sections of code with no further
 /// formatting, or configuration done outside, inside, or between units.
-pub struct JoinedCode<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
-    code_set: &'a T,
+pub struct JoinedCode<'a, T: GetIter<Item: CodeGenerate>> {
+    code_set: T,
+    phantom: PhantomData<&'a()>,
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> JoinedCode<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> JoinedCode<'a, T> {
     /// Creates a JoinedCode generator
     /// 
     /// This struct makes it easy to join multiple generators without any separation
@@ -321,12 +322,13 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> JoinedCode<'a, T> {
     /// let mut info = CodeGenerationInfo::new();
     /// assert_eq!("This:Is:Joined", format!("{}", joined.display(info)));
     /// ```
-    pub fn new(set: &'a T) -> JoinedCode<'a, T> {
-        JoinedCode { code_set: set }
+    pub fn new(set: T) -> JoinedCode<'a, T> {
+        JoinedCode { code_set: set, phantom: PhantomData }
     }
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for JoinedCode<'a, T> {
+impl<'a, T: 'a+GetIter<Item: CodeGenerate>> CodeGenerate for JoinedCode<'a, T>
+where Self: 'a {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result = fmt::Result::Ok(());
 
@@ -424,18 +426,18 @@ impl CodeGenerate for &str {
     }
 }
 
-pub struct SeparatedCode<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+pub struct SeparatedCode<'a, T: GetIter<Item: CodeGenerate>> {
     items: &'a T,
     separator: &'a dyn CodeGenerate,
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> SeparatedCode<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> SeparatedCode<'a, T> {
     pub fn new(items: &'a T, separator: &'a dyn CodeGenerate) -> SeparatedCode<'a, T> {
         SeparatedCode { items: items, separator: separator }
     }
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for SeparatedCode<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeGenerate for SeparatedCode<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
 
@@ -454,11 +456,11 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for SeparatedCo
     }
 }
 
-pub struct CodeBody<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+pub struct CodeBody<'a, T: GetIter<Item: CodeGenerate>> {
     raw_code: CodeSet<'a, T>,
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeBody<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeBody<'a, T> {
     /// Creates a CodeBody generator
     /// 
     /// This struct is used for code bodies. Think the body to an if statement,
@@ -509,7 +511,7 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeBody<'a, T> {
     }
 }
 
-impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeBody<'a, T> {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeGenerate for CodeBody<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
         match info.indent_style {
@@ -578,12 +580,12 @@ impl<'a, T: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for CodeBody<'a
     }
 }
 
-pub struct HeaderPlusBody<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> {
+pub struct HeaderPlusBody<'a, HT: CodeGenerate, BT: GetIter<Item: CodeGenerate>> {
     header: HT,
     body: CodeBody<'a, BT>,
 }
 
-impl<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> HeaderPlusBody<'a, HT, BT> {
+impl<'a, HT: CodeGenerate, BT: GetIter<Item: CodeGenerate>> HeaderPlusBody<'a, HT, BT> {
     /// Creates a HeaderPlusBody generator
     /// 
     /// This struct is used for joining headers and bodies. For example joining
@@ -617,8 +619,7 @@ impl<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> HeaderPlusBody<'a, HT, 
     }
 }
 
-impl<'a, HT, BT: GetIter<'a, Item=&'a dyn CodeGenerate>> CodeGenerate for HeaderPlusBody<'a, HT, BT>
-where HT: CodeGenerate,{
+impl<'a, HT: CodeGenerate, BT: GetIter<Item: CodeGenerate>> CodeGenerate for HeaderPlusBody<'a, HT, BT> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
         result = result.and(self.header.generate(f, info));

@@ -1,6 +1,17 @@
 use std::fmt;
 use crate::building_block_generators::*;
+use crate::iterable::GetIter;
 use crate::setup::*;
+
+struct Param<'a> {
+    p_type: Name<'a>,
+    name: Name<'a>,
+}
+impl<'a> CodeGenerate for Param<'a> {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        write!(f, "{} {}", self.p_type.display(info), self.name.display(info))
+    }
+}
 
 pub struct FunctionSignature<'a> {
     function_name: Name<'a>,
@@ -10,11 +21,6 @@ pub struct FunctionSignature<'a> {
 
 impl<'a> FunctionSignature<'a> {
     pub fn new(return_type: Name<'a>, name: Name<'a>, parameters: &'a [(Name<'a>, Name<'a>)]) -> FunctionSignature<'a> {
-        /*let mut set = Vec::<Box<dyn CodeGenerate>>::new();
-        for (type_name, param_name) in parameters {
-            set.push(Box::new(JoinedCode::new(vec![Box::new(type_name.with_type(NameType::Type)), Box::new(String::from(" ")), Box::new(param_name.with_type(NameType::Member))])))
-        }*/
-
         FunctionSignature {
             return_type: return_type.with_type(NameType::Type),
             function_name: name.with_type(NameType::Function),
@@ -30,35 +36,26 @@ impl<'a> CodeGenerate for FunctionSignature<'a> {
         result = result.and(write!(f, " "));
         result = result.and(self.function_name.generate(f, info));
         result = result.and(write!(f, "("));
-        let test = self
-        .parameters
-        .iter()
-        .map(|(p_type, name)| {
-            let returned: [&dyn CodeGenerate;3] = [
-                p_type, &" ", name
-            ];
-            JoinedCode::new(&returned.map(|thing|));
-        });
-        SeparatedCode::new(&test, &", ").generate(f, info);
+        result = result.and(SeparatedCode::new(&self.parameters.iter().map(|(a, b)| Param { p_type: *a, name: *b }), &", ").generate(f, info));
         result = result.and(write!(f, ")"));
 
         result
     }
 }
 
-pub struct FunctionDeclaration {
-    signature: FunctionSignature
+pub struct FunctionDeclaration<'a> {
+    signature: FunctionSignature<'a>
 }
 
-impl FunctionDeclaration {
-    pub fn new(return_type: Name, name: Name, parameters: Vec<(Name, Name)>) -> FunctionDeclaration {
+impl<'a> FunctionDeclaration<'a> {
+    pub fn new(return_type: Name<'a>, name: Name<'a>, parameters: &'a [(Name<'a>, Name<'a>)]) -> FunctionDeclaration<'a> {
         FunctionDeclaration {
             signature: FunctionSignature::new(return_type, name, parameters)
         }
     }
 }
 
-impl CodeGenerate for FunctionDeclaration {
+impl<'a> CodeGenerate for FunctionDeclaration<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let mut result: fmt::Result = fmt::Result::Ok(());
         result = result.and(self.signature.generate(f, info));
@@ -68,77 +65,77 @@ impl CodeGenerate for FunctionDeclaration {
     }
 }
 
-impl<'a> From<FunctionSignature<'a>> for FunctionDeclaration {
-    fn from(value: FunctionSignature) -> Self {
+impl<'a> From<FunctionSignature<'a>> for FunctionDeclaration<'a> {
+    fn from(value: FunctionSignature<'a>) -> Self {
         Self { signature: value }
     }
 }
 
-pub struct Function {
-    content: HeaderPlusBody<FunctionSignature>,
+pub struct Function<'a, I: CodeGenerate, T: GetIter<Item=I>> {
+    content: HeaderPlusBody<'a, FunctionSignature<'a>, T>,
 }
 
-impl Function {
-    pub fn new(signature: FunctionSignature, body: CodeSet) -> Function {
+impl<'a, I: CodeGenerate, T: GetIter<Item=I>> Function<'a, I, T> {
+    pub fn new(signature: FunctionSignature<'a>, body: &'a T) -> Function<'a, I, T> {
         Function {
-            content: HeaderPlusBody::new(signature, CodeBody::from_set(body))
+            content: HeaderPlusBody::new(signature, CodeBody::new(body))
         }
     }
 }
 
-impl CodeGenerate for Function {
+impl<'a, I: CodeGenerate, T: GetIter<Item=I>> CodeGenerate for Function<'a, I, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::Function;
         self.content.generate(f, info)
     }
 }
 
-pub struct FunctionCall {
-    name: Name,
-    params: SeparatedCode,
+pub struct FunctionCall<'a>  {
+    name: Name<'a>,
+    params: &'a [(Name<'a>, Name<'a>)],
     is_terminated: bool,
 }
 
-impl FunctionCall {
-    pub fn new(name: Name, params: Vec<Box<dyn CodeGenerate>>) -> FunctionCall {
+impl<'a> FunctionCall<'a> {
+    pub fn new(name: Name<'a>, params: &'a [(Name<'a>, Name<'a>)]) -> FunctionCall<'a> {
         FunctionCall {
             name: name.with_type(NameType::Function),
-            params: SeparatedCode::new(params, Box::new(String::from(", "))),
+            params,
             is_terminated: false
         }
     }
 
-    pub fn new_with_end(name: Name, params: Vec<Box<dyn CodeGenerate>>) -> FunctionCall {
+    pub fn new_with_end(name: Name<'a>, params: &'a [(Name<'a>, Name<'a>)]) -> FunctionCall<'a> {
         FunctionCall {
             name: name.with_type(NameType::Function),
-            params: SeparatedCode::new(params, Box::new(String::from(", "))),
+            params,
             is_terminated: true
         }
     }
 }
 
-impl CodeGenerate for FunctionCall {
+impl<'a> CodeGenerate for FunctionCall<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
         let termination = if self.is_terminated {";"} else {""};
-        write!(f, "{}({}){}", self.name.display(info), self.params.display(info), termination)
+        write!(f, "{}({}){}", self.name.display(info), SeparatedCode::new(&self.params.iter().map(|(a, b)| Param {p_type: *a, name: *b}), &", ").display(info), termination)
     }
 }
 
-pub struct HeaderFile {
-    file_name: Name,
-    content: CodeSet,
+pub struct HeaderFile<'a, T: GetIter<Item: CodeGenerate>> {
+    file_name: Name<'a>,
+    content: CodeSet<'a, T>,
 }
 
-impl HeaderFile {
-    pub fn new(file_name: Name, content: CodeSet) -> HeaderFile {
+impl<'a, T: GetIter<Item: CodeGenerate>> HeaderFile<'a, T> {
+    pub fn new(file_name: Name<'a>, content: CodeSet<'a, T>) -> HeaderFile<'a, T> {
         HeaderFile {
-            file_name: file_name.with_type(NameType::FixedCase(CaseType::ScreamingSnakeCase)),
+            file_name: file_name.with_type(NameType::ConstDefine),
             content: content,
         }
     }
 }
 
-impl CodeGenerate for HeaderFile {
+impl<'a, T: GetIter<Item: CodeGenerate>> CodeGenerate for HeaderFile<'a, T> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::File;
 
@@ -161,106 +158,121 @@ impl CodeGenerate for HeaderFile {
     }
 }
 
-pub struct Enum {
-    content: HeaderPlusBody<String>,
-    name: Name,
+struct EnumEntry<'a> {
+    name: Name<'a>,
+    value: Option<i128>
 }
 
-impl Enum {
-    pub fn new(name: Name, values: Vec<(Name, Option<i64>)>) -> Enum {
-        let mut code_values: Vec<Box<dyn CodeGenerate>> = Vec::new();
-        for (member_name, value) in values {
-            if let Some(value) = value {
-                code_values.push(Box::new(JoinedCode::new(
-                    vec![Box::new(member_name.with_type(NameType::Type)), Box::new(format!(" = {},", value))]
-                )));
-            } else {
-                code_values.push(Box::new(JoinedCode::new(
-                    vec![Box::new(member_name.with_type(NameType::Type)), Box::new(String::from(","))]
-                )));
-            }
+impl<'a> CodeGenerate for EnumEntry<'a> {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        match self.value {
+            Some(value) => { write!(f, "{} = {},", self.name.display(info), value) }
+            None => { write!(f, "{},", self.name.display(info)) }
         }
+    }
+}
+
+pub struct Enum<'a> {
+    content: &'a[(Name<'a>, Option<i128>)],
+    name: Name<'a>,
+}
+
+impl<'a> Enum<'a> {
+    pub fn new(name: Name<'a>, values: &'a[(Name<'a>, Option<i128>)]) -> Enum<'a> {
         Enum {
             name: name.with_type(NameType::Type),
-            content: HeaderPlusBody::new(
-                String::from("typedef enum"),
-                CodeBody::new(code_values)
-            )
+            content: values
         }
     }
 }
 
-impl CodeGenerate for Enum {
+impl<'a> CodeGenerate for Enum<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::Enum;
-        let mut result = self.content.generate(f, info);
-        result = result.and(String::from(" ").generate(f, info));
+        let mut result = HeaderPlusBody::new(
+            "typedef enum",
+            CodeBody::new(&self.content.iter().map(
+                |(a,b)|
+                EnumEntry {
+                    name: a.with_type(NameType::ConstDefine), value: *b
+                }))
+        ).generate(f, info);
+        result = result.and(" ".generate(f, info));
         result = result.and(self.name.generate(f, info));
-        result = result.and(String::from(";").generate(f, info));
+        result = result.and(";".generate(f, info));
 
         result
     }
 }
 
-pub struct Struct {
-    content: HeaderPlusBody<String>,
-    name: Name,
+
+
+struct StructEntry<'a> {
+    e_type: Name<'a>,
+    name: Name<'a>
 }
 
-impl Struct {
-    pub fn new(name: Name, values: Vec<(Name, Name)>) -> Struct {
-        let mut code_values: Vec<Box<dyn CodeGenerate>> = Vec::new();
-        for (member_type, member_name) in values {
-            code_values.push(Box::new(JoinedCode::new(vec![
-                Box::new(member_type.with_type(NameType::Type)),
-                Box::new(String::from(" ")),
-                Box::new(member_name.with_type(NameType::Member)),
-                Box::new(String::from(";")),
-            ])));
-        }
+impl<'a> CodeGenerate for StructEntry<'a> {
+    fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
+        write!(f, "{} = {},", self.e_type.display(info), self.name.display(info))
+    }
+}
+
+pub struct Struct<'a> {
+    content: &'a [(Name<'a>, Name<'a>)],
+    name: Name<'a>,
+}
+
+impl<'a> Struct<'a> {
+    pub fn new(name: Name<'a>, values: &'a [(Name<'a>, Name<'a>)]) -> Struct<'a> {
         Struct {
             name: name.with_type(NameType::Type),
-            content: HeaderPlusBody::new(
-                String::from("typedef struct"),
-                CodeBody::new(code_values)
-            )
+            content: values
         }
     }
 }
 
-impl CodeGenerate for Struct {
+impl<'a> CodeGenerate for Struct<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, mut info: CodeGenerationInfo) -> fmt::Result {
         info.context = GeneratorContext::Struct;
-        let mut result = self.content.generate(f, info);
-        result = result.and(String::from(" ").generate(f, info));
+        let mut result = HeaderPlusBody::new(
+            "typedef struct",
+             CodeBody::new(&self.content.iter().map(
+                |(a, b)|
+                StructEntry {
+                    e_type: a.with_type(NameType::Type),
+                    name: b.with_type(NameType::Member)
+                }))
+        ).generate(f, info);
+        result = result.and(" ".generate(f, info));
         result = result.and(self.name.generate(f, info));
-        result = result.and(String::from(";").generate(f, info));
+        result = result.and(";".generate(f, info));
 
         result
     }
 }
 
-pub struct TypeDef {
-    defined_type: String,
-    name: Name,
+pub struct TypeDef<'a> {
+    defined_type: Name<'a>,
+    name: Name<'a>,
 }
 
-impl TypeDef {
-    pub fn new(name: Name, defined_type: String) -> TypeDef {
-        TypeDef { 
-            defined_type: defined_type,
+impl<'a> TypeDef<'a> {
+    pub fn new(name: Name<'a>, defined_type: Name<'a>) -> TypeDef<'a> {
+        TypeDef {
+            defined_type: defined_type.with_type(NameType::Type),
             name: name.with_type(NameType::Type)
         }
     }
 }
 
-impl CodeGenerate for TypeDef {
+impl<'a> CodeGenerate for TypeDef<'a> {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
-        let mut result = String::from("typedef ").generate(f, info);
+        let mut result = "typedef ".generate(f, info);
         result = result.and(self.defined_type.generate(f, info));
-        result = result.and(String::from(" ").generate(f, info));
+        result = result.and(" ".generate(f, info));
         result = result.and(self.name.generate(f, info));
-        result = result.and(String::from(";").generate(f, info));
+        result = result.and(";".generate(f, info));
 
 
         result
@@ -268,12 +280,12 @@ impl CodeGenerate for TypeDef {
 }
 
 
-pub struct ConstDefine<VT> {
-    name: Name,
+pub struct ConstDefine<'a, VT> {
+    name: Name<'a>,
     value: VT,
 }
 
-impl<VT> ConstDefine<VT> {
+impl<'a, VT> ConstDefine<'a, VT> {
     /// Creates a ConstDefine generator
     /// 
     /// ```
@@ -292,12 +304,12 @@ impl<VT> ConstDefine<VT> {
     }
 }
 
-impl<VT> CodeGenerate for ConstDefine<VT>
+impl<'a, VT> CodeGenerate for ConstDefine<'a, VT>
 where VT: CodeGenerate + 'static {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
-        let mut result = String::from("#define ").generate(f, info);
+        let mut result = "#define ".generate(f, info);
         result = result.and(self.name.generate(f, info));
-        result = result.and(String::from(" ").generate(f, info));
+        result = result.and(" ".generate(f, info));
         result = result.and(self.value.generate(f, info));
 
         result
