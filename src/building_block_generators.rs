@@ -91,14 +91,14 @@ impl Name {
     /// # use code_generator::DisplayExt;
     /// #
     /// let cc = NameType::FixedCase(CaseType::CamelCase);
-    /// let name = Name::new("test_name1").with_type(cc);
+    /// let name = Name::new("Test_Name1").with_type(cc);
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
     /// assert_eq!("test_Name1", format!("{}", name.display(info)));
     ///
     /// let ssc = NameType::FixedCase(CaseType::ScreamingSnakeCase);
-    /// let name = Name::new("test_name2").with_type(ssc);
+    /// let name = Name::new("testName`2").with_type(ssc);
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("TEST__NAME2", format!("{}", name.display(info)));
+    /// assert_eq!("TEST_NAME_2", format!("{}", name.display(info)));
     ///
     /// let ssc = NameType::FixedCase(CaseType::SnakeCase);
     /// let name = Name::new("testNameThree").with_type(ssc);
@@ -106,9 +106,9 @@ impl Name {
     /// assert_eq!("test_name_three", format!("{}", name.display(info)));
     ///
     /// let ssc = NameType::FixedCase(CaseType::FlatCase);
-    /// let name = Name::new("test_four").with_type(ssc);
+    /// let name = Name::new("testFour").with_type(ssc);
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("test_four", format!("{}", name.display(info)));
+    /// assert_eq!("testfour", format!("{}", name.display(info)));
     /// ```
     pub fn new(name: impl Into<String>) -> Name {
         Name {
@@ -117,8 +117,8 @@ impl Name {
         }
     }
 
-    pub fn new_with_type(snake_case_name: impl Into<String>, name_type: NameType) -> Name {
-        Name::new(snake_case_name).with_type(name_type)
+    pub fn new_with_type(camel_case_name: impl Into<String>, name_type: NameType) -> Name {
+        Name::new(camel_case_name).with_type(name_type)
     }
 
     pub fn with_type(mut self, name_type: NameType) -> Name {
@@ -151,8 +151,9 @@ impl Name {
     ///     .with_case_types(
     ///         CaseTypes::new().with_const_define(CaseType::ScreamingSnakeCase)
     ///     );
-    /// assert_eq!("TEST__NAME1_H", format!("{}", name.display(info)));
+    /// assert_eq!("TEST_NAME1_H", format!("{}", name.display(info)));
     pub fn as_include_guard(mut self) -> Name {
+        self = self.with_type(NameType::ConstDefine);
         self.source.push('H');
         self
     }
@@ -173,7 +174,10 @@ impl Name {
 
 impl CodeGenerate for Name {
     fn generate(&self, f: &mut fmt::Formatter<'_>, info: CodeGenerationInfo) -> fmt::Result {
-        let case_type = self.get_case_type(info.case_types);
+        if let NameType::Bypass = self.name_type {
+            return write!(f, "{}", self.source);
+        }
+        let case_type: CaseType = self.get_case_type(info.case_types);
         write!(f, "{}", self.source.as_case(case_type))
     }
 }
@@ -200,7 +204,7 @@ impl Include {
     /// #
     /// let inc = Include::new(Name::new_with_type("my_testFile", NameType::File));
     /// let info = CodeGenerationInfo::from_style(CodeStyle::KnR);
-    /// assert_eq!("#include \"My_TestFile.h\"", format!("{}", inc.display(info)));
+    /// assert_eq!("#include \"My_testFile.h\"", format!("{}", inc.display(info)));
     /// ```
     pub fn new(file_name: Name) -> Include {
         Include {
